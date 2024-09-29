@@ -42,6 +42,12 @@ func readLineTimeout(ctx context.Context, r *bufio.Reader) (string, error) {
 		str string
 	}
 	// Buffered channel in order to avoid goroutine leak.
+	//
+	// Had one used an unbuffered channel, if `ctx.Done()` (in the select below)
+	// were to won the race, the goroutine below would leak, as the channel
+	// would never be able to receive its message, making the "send" hang.
+	//
+	// See also the `chan_goroutine_leak` example.
 	c := make(chan result, 1)
 	// Since `ReadString` is blocking, in order to make it "cancellable", one
 	// needs to start a goroutine, making it run concurrently with respect to
